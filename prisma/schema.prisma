@@ -8,20 +8,24 @@ datasource db {
 }
 
 model User {
-  id                  String    @id @default(cuid())
-  name                String?
-  email               String    @unique
-  emailVerified       DateTime?
-  image               String?
-  accounts            Account[]
-  sessions            Session[]
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+
+  stripeCustomerId    String?   @unique
   onboardingCompleted Boolean   @default(false)
   userType            userType?
 
   Company   Company?
   JobSeeker JobSeeker?
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+
+  SavedJobPost SavedJobPost[]
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
 }
 
 enum userType {
@@ -30,15 +34,16 @@ enum userType {
 }
 
 model Company {
-  id       String  @id @default(uuid())
+  id       String    @id @default(uuid())
   name     String
   location String
   about    String
   Logo     String
   website  String
   xAccount String?
-  user     User    @relation(fields: [userId], references: [id])
-  userId   String  @unique
+  JobPost  JobPost[]
+  user     User      @relation(fields: [userId], references: [id])
+  userId   String    @unique
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -92,6 +97,45 @@ model VerificationToken {
   expires    DateTime
 
   @@id([identifier, token])
+}
+
+model JobPost {
+  id              String        @id @default(uuid())
+  jobTitle        String
+  employmentType  String
+  location        String
+  salaryFrom      Int
+  salaryTo        Int
+  jobDescription  String
+  listingDuration Int
+  benefits        String[]
+  status          JobpostStatus @default(DRAFT)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Company   Company  @relation(fields: [companyId], references: [id])
+  companyId String
+
+  SavedJobPost SavedJobPost[]
+}
+
+enum JobpostStatus {
+  DRAFT
+  ACTIVE
+  EXPIRED
+}
+
+model SavedJobPost {
+  id        String  @id @default(uuid())
+  JobPost   JobPost @relation(fields: [jobPostId], references: [id])
+  jobPostId String
+  User      User   @relation(fields: [userId], references: [id])
+  userId    String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, jobPostId])
 }
 
 // Optional for WebAuthn support
