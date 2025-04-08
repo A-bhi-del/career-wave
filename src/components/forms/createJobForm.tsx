@@ -9,7 +9,7 @@ import {
   FormMessage,
 } from "../ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { jobPostSchema, jobSchema } from "@/app/utils/zodSchemas";
+import { jobPostSchema } from "@/app/utils/zodSchemas";
 import { z } from "zod";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Input } from "../ui/input";
@@ -185,8 +185,8 @@ export function CreateJobForm({
                     control={form.control}
                     minSalary={10000}
                     maxSalary={200000}
-                    currency="Rupees"
                     step={2000}
+                    
                   />
                 </FormControl>
                 <FormMessage />

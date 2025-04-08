@@ -102,6 +102,7 @@ const stats = [
   { id: 7, value: "5k+", label: "New job postings per month" },
   { id: 8, value: "100k+", label: "Successful hires" },
 ];
+
 export default async function PostJobPage() {
   const session = await requireUser();
   const data = await getCompany(session.id as string);
@@ -146,10 +147,9 @@ export default async function PostJobPage() {
                   className="border-l-2 border-primary pl-4"
                 >
                   <p className="text-sm text-muted-foreground italic">
-                    "{testimonials.quote}"
+                    &quot;{testimonials.quote}&quot;
                   </p>
                   <footer className="text-sm font-medium mt-2">
-                    {" "}
                     - {testimonials.author}, {testimonials.company}
                   </footer>
                 </blockquote>

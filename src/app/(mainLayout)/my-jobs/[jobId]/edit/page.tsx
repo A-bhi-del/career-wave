@@ -2,7 +2,7 @@ import { prisma } from "@/app/utils/db";
 import { requireUser } from "@/app/utils/requireuser";
 import { EditJobForm } from "@/components/forms/EditJobForm";
 import { notFound } from "next/navigation";
-import { toast } from "sonner";
+
 
 async function getData(jobId: string, userId: string) {
   const data = await prisma.jobPost.findUnique({

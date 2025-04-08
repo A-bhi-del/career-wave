@@ -2,7 +2,7 @@
 
 import { useFormStatus } from "react-dom";
 import { Button } from "../ui/button";
-import { Divide, Heart, Loader2 } from "lucide-react";
+import { Heart, Loader2 } from "lucide-react";
 import { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 

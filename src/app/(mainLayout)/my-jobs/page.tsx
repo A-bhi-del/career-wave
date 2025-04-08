@@ -27,7 +27,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  CopyCheckIcon,
   MoreHorizontal,
   PenBoxIcon,
   XCircle,

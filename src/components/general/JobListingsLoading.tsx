@@ -11,7 +11,6 @@ export function JobListingLoading(){
              <div className="flex-1 space-y-3">
                  <Skeleton className="h-5 w-[300px]" />
                  <Skeleton className="h-5 w-[200px]" />
-
                  <div className="flex gap-4 mt-4">
                      <Skeleton className="h-4 w-[120px]" />
                      <Skeleton className="h-4 w-[120px]" />

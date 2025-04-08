@@ -27,13 +27,12 @@ import Image from "next/image";
 import { Button } from "../ui/button";
 import { XIcon } from "lucide-react";
 import { UploadDropzone } from "../general/uploadthingReexported";
-import { JobListingDurationSelector } from "../general/JobListingDurationSelector";
 import { useForm } from "react-hook-form";
 import { jobPostSchema } from "@/app/utils/zodSchemas";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useState } from "react";
-import { createJob, editJobPost } from "@/app/action";
+import { editJobPost } from "@/app/action";
 
 
 interface iAppProps {
@@ -195,8 +194,8 @@ export function EditJobForm({
                     control={form.control}
                     minSalary={10000}
                     maxSalary={200000}
-                    currency="Rupees"
                     step={2000}
+                    
                   />
                 </FormControl>
                 <FormMessage />

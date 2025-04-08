@@ -5,7 +5,6 @@ import TextAlign from "@tiptap/extension-text-align";
 import Typography from "@tiptap/extension-typography";
 import { ControllerRenderProps } from "react-hook-form";
 import Underline from "@tiptap/extension-underline";
-import FontFamily from "@tiptap/extension-font-family";
 import Color from '@tiptap/extension-color'
 import TextStyle from '@tiptap/extension-text-style'
 
