@@ -44,7 +44,12 @@ export async function createCompany(data: z.infer<typeof companySchema>) {
             userType: "COMPANY",
             Company: {
                 create: {
-                    ...validateData,
+                    name: validateData.name!,
+                    location: validateData.location!,
+                    about: validateData.about!,
+                    Logo: validateData.Logo,
+                    website: validateData.website,
+                    xAccount: validateData.xAccount,
                 },
             },
         },
@@ -71,7 +76,9 @@ export async function createJobSeeker(data: z.infer<typeof jobSchema>) {
             userType: "JOB_SEEKER",
             JobSeeker: {
                 create: {
-                    ...validateData,
+                    name: validateData.name,
+                    about: validateData.about,
+                    resume: validateData.resume,
                 },
             },
         },
