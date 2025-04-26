@@ -34,7 +34,7 @@ export function ChatBot() {
 
         const data = await response.json();
         setMessages(prev => [...prev, { text: data.response, isUser: false }]);
-      } catch (error) {
+      } catch (_) {
         setMessages(prev => [...prev, { 
           text: "Sorry, I'm having trouble responding right now. Please try again later.", 
           isUser: false 
