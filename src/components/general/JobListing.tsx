@@ -2,22 +2,26 @@ import { prisma } from "@/app/utils/db";
 import { EmptyState } from "./EmptyState";
 import { Jobcard } from "./Jobcard";
 import { MainPagination } from "./MainPagination";
-import { JobpostStatus } from "@prisma/client";
+import { JobpostStatus, Prisma } from "@prisma/client";
 
 async function getData({
   page = 1,
   pageSize = 3,
   jobTypes = [],
   location = "",
+  search = "",
+  salaryRange = [0, 200000],
 }: {
   page: number;
   pageSize: number;
   jobTypes: string[];
   location: string;
+  search: string;
+  salaryRange: number[];
 }) {
   const skip = (page - 1) * pageSize;
 
-  const where = {
+  const where: Prisma.JobPostWhereInput = {
     status: JobpostStatus.ACTIVE,
     ...(jobTypes.length > 0 && {
       employmentType: {
@@ -25,9 +29,28 @@ async function getData({
       },
     }),
     ...(location && location !== "worldwide" && {
-        location: location,
-    })
+      location: location,
+    }),
+    ...(search && {
+      jobTitle: {
+        contains: search,
+        mode: Prisma.QueryMode.insensitive
+      }
+    }),
+    AND: [
+      {
+        salaryFrom: {
+          gte: salaryRange[0]
+        }
+      },
+      {
+        salaryTo: {
+          lte: salaryRange[1]
+        }
+      }
+    ]
   };
+
   const [data, totalCount] = await Promise.all([
     prisma.jobPost.findMany({
       where: where,
@@ -56,9 +79,7 @@ async function getData({
     }),
 
     prisma.jobPost.count({
-      where: {
-        status: "ACTIVE",
-      },
+      where: where,
     }),
   ]);
   return {
@@ -67,12 +88,26 @@ async function getData({
   };
 }
 
-export async function JobListing({ currentPage, jobTypes, location }: { currentPage: number, jobTypes: string[], location: string }) {
+export async function JobListing({ 
+  currentPage, 
+  jobTypes, 
+  location, 
+  search,
+  salaryRange = [0, 200000]
+}: { 
+  currentPage: number, 
+  jobTypes: string[], 
+  location: string, 
+  search: string,
+  salaryRange: number[]
+}) {
   const { jobs, totalPages } = await getData({
     page: currentPage,
     pageSize: 3,
     jobTypes: jobTypes,
-    location: location
+    location: location,
+    search: search,
+    salaryRange: salaryRange
   });
   return (
     <>

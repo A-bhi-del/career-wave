@@ -9,14 +9,21 @@ export async function Navbar() {
   const session = await auth();
 
   return (
-    <nav className="flex justify-between items-center p-4">
-      <Link href="/" className="flex items-center gap-2">
-        <Image src="/logo1.png" alt="Logo" width={40} height={40} />
-        <h1 className="text-2xl font-bold">
-          Career <span className="text-primary">Wave</span>
-        </h1>
-      </Link>
-      <div className="hidden md:flex items-center gap-5">
+    <nav className="flex flex-col md:flex-row items-center justify-between gap-4 md:gap-0 p-4 w-full">
+      {/* Logo */}
+      <div className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2">
+          <Image src="/logo1.png" alt="Logo" width={40} height={40} />
+          <h1 className="text-2xl font-bold">
+            Career <span className="text-primary">Wave</span>
+          </h1>
+        </Link>
+      </div>
+
+      {/* Search bar - hidden on mobile */}
+    
+      {/* Right side actions */}
+      <div className="flex items-center gap-4">
         <ThemeToggle />
         <Link
           className={`${buttonVariants({ size: "lg" })} rounded-full`}

@@ -18,6 +18,7 @@ import { countryList } from "@/app/utils/countriesList";
 import { Slider } from "../ui/slider";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback } from "react";
+import { Input } from "../ui/input";
 
 const jobTypes = ["full-time", "part-time", "contract", "internship"];
 
@@ -28,6 +29,8 @@ export function JobFilter() {
 
   const currentJobTypes = searchParams.get("jobTypes")?.split(",") || [];
   const currentLocation = searchParams.get("location") || "";
+  const currentSearch = searchParams.get("search") || "";
+  const currentSalaryRange = searchParams.get("salaryRange")?.split(",").map(Number) || [0, 200000];
 
   function clearAllFilter() {
     router.push("/");
@@ -64,6 +67,15 @@ export function JobFilter() {
   function handleLocationChange(location: string) {
     router.push(`?${createQueryString("location", location)}`);
   }
+
+  function handleSearchChange(searchTerm: string) {
+    router.push(`?${createQueryString("search", searchTerm)}`);
+  }
+
+  function handleSalaryRangeChange(values: number[]) {
+    router.push(`?${createQueryString("salaryRange", values.join(","))}`);
+  }
+
   return (
     <Card className="col-span-1 h-fit hover:shadow-lg transition-all duration-300 hover:border-primary">
       <CardHeader className="flex flex-row justify-between items-center">
@@ -80,6 +92,17 @@ export function JobFilter() {
       </CardHeader>
       <Separator className="mb-4" />
       <CardContent className="space-y-6">
+        <div className="space-y-3">
+          <Label className="text-lg font-semibold text-primary">Search Jobs</Label>
+          <Input
+            type="text"
+            placeholder="Search by job title..."
+            value={currentSearch}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            className="w-full"
+          />
+        </div>
+        <Separator />
         <div className="space-y-3">
           <Label className="text-lg font-semibold text-primary">Job Type</Label>
 
@@ -134,8 +157,17 @@ export function JobFilter() {
           <label className="text-lg font-semibold text-primary">
             Salary Range
           </label>
-          <Slider defaultValue={[5000]} min={0} max={200000} step={5000} />
-          <div className="text-sm text-muted-foreground">{}</div>
+          <Slider 
+            defaultValue={currentSalaryRange} 
+            min={0} 
+            max={200000} 
+            step={5000}
+            onValueChange={handleSalaryRangeChange}
+            value={currentSalaryRange}
+          />
+          <div className="text-sm text-muted-foreground">
+            {currentSalaryRange[0]} - {currentSalaryRange[1]}
+          </div>
         </div>
       </CardContent>
     </Card>

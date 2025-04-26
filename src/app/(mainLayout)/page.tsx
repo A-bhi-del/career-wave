@@ -4,7 +4,13 @@ import { JobListingLoading } from "@/components/general/JobListingsLoading";
 import { Suspense } from "react";
 
 type SearchParams = {
-  searchParams: Promise<{ page?: string; jobTypes?: string; location: string }>;
+  searchParams: Promise<{ 
+    page?: string; 
+    jobTypes?: string; 
+    location: string; 
+    search?: string;
+    salaryRange?: string;
+  }>;
 };
 
 export default async function Home({ searchParams }: SearchParams) {
@@ -12,8 +18,10 @@ export default async function Home({ searchParams }: SearchParams) {
   const currentPage = Number(params.page) || 1;
   const jobTypes = params.jobTypes?.split(",") || [];
   const location = params.location || "";
+  const search = params.search || "";
+  const salaryRange = params.salaryRange?.split(",").map(Number) || [0, 200000];
 
-  const filterKey = `page=${currentPage};types=${jobTypes.join(",")};location=${location}`;
+  const filterKey = `page=${currentPage};types=${jobTypes.join(",")};location=${location};search=${search};salaryRange=${salaryRange.join(",")}`;
   return (
     <div className="grid grid-cols-3 gap-8">
       <JobFilter />
@@ -24,6 +32,8 @@ export default async function Home({ searchParams }: SearchParams) {
             currentPage={currentPage}
             jobTypes={jobTypes}
             location={location}
+            search={search}
+            salaryRange={salaryRange}
           />
         </Suspense>
       </div>
