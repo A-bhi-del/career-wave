@@ -113,7 +113,7 @@ export async function createJob(data: z.infer<typeof jobPostSchema>) {
 
     })
     if (!company?.id) {
-        return redirect('/');
+        return redirect('/onboarding');
     }
 
     let stripeCustomerId = company.user.stripeCustomerId;
@@ -243,6 +243,139 @@ export async function unSaveJobPost(savedJobPostId: string) {
     revalidatePath(`/job/${data.jobPostId}`);
 }
 
+export async function applyToJob(jobId: string, coverLetter?: string, resumeUrl?: string) {
+    const user = await requireUser();
+    const req = await request();
+    const decision = await aj.protect(req);
+
+    if (decision.isDenied()) {
+        throw new Error("Forbidden");
+    }
+
+    try {
+        // Check if user is a job seeker
+        const jobSeeker = await prisma.jobSeeker.findUnique({
+            where: {
+                userId: user.id,
+            },
+            select: {
+                id: true,
+                resume: true,
+            }
+        });
+
+        if (!jobSeeker) {
+            throw new Error("Only job seekers can apply to jobs");
+        }
+
+        // Check if already applied
+        let existingApplication = null;
+        try {
+            existingApplication = await (prisma as any).jobApplication.findUnique({
+                where: {
+                    userId_jobPostId: {
+                        userId: user.id,
+                        jobPostId: jobId,
+                    }
+                }
+            });
+        } catch (error) {
+            console.log("JobApplication model not available yet");
+        }
+
+        if (existingApplication) {
+            throw new Error("You have already applied to this job");
+        }
+
+        // Create application
+        try {
+            await (prisma as any).jobApplication.create({
+                data: {
+                    jobPostId: jobId,
+                    userId: user.id,
+                    coverLetter: coverLetter || null,
+                    resume: resumeUrl || jobSeeker.resume,
+                    status: "PENDING",
+                }
+            });
+        } catch (error) {
+            console.log("JobApplication model not available yet, skipping application creation");
+            throw new Error("Application system is currently being updated. Please try again later.");
+        }
+
+        revalidatePath(`/job/${jobId}`);
+        return { success: true };
+    } catch (error) {
+        console.error("Error applying to job:", error);
+        throw error;
+    }
+}
+
+export async function updateApplicationStatus(applicationId: string, status: string, companyNotes?: string) {
+    const user = await requireUser();
+    const req = await request();
+    const decision = await aj.protect(req);
+
+    if (decision.isDenied()) {
+        throw new Error("Forbidden");
+    }
+
+    try {
+        // Check if user is a company owner
+        const company = await prisma.company.findUnique({
+            where: {
+                userId: user.id,
+            },
+            select: {
+                id: true,
+            }
+        });
+
+        if (!company) {
+            throw new Error("Only companies can update application status");
+        }
+
+        // Verify the application belongs to this company's job
+        let application = null;
+        try {
+            application = await (prisma as any).jobApplication.findUnique({
+                where: {
+                    id: applicationId,
+                },
+                include: {
+                    JobPost: {
+                        select: {
+                            companyId: true,
+                        }
+                    }
+                }
+            });
+        } catch (error) {
+            console.log("JobApplication model not available yet");
+            throw new Error("Application system is currently being updated. Please try again later.");
+        }
+
+        if (!application || application.JobPost.companyId !== company.id) {
+            throw new Error("Application not found or access denied");
+        }
+
+        await (prisma as any).jobApplication.update({
+            where: {
+                id: applicationId,
+            },
+            data: {
+                status: status as any,
+                companyNotes: companyNotes || null,
+            }
+        });
+
+        revalidatePath("/applications");
+        return { success: true };
+    } catch (error) {
+        console.error("Error updating application status:", error);
+        throw error;
+    }
+}
 
 export async function editJobPost(data: z.infer<typeof jobPostSchema>, jobId: string) {
     const user = await requireUser();

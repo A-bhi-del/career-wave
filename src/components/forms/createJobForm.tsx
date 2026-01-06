@@ -68,19 +68,23 @@ export function CreateJobForm({
       employmentType: "",
       listingDuration: 30,
       location: "",
-      salaryFrom: 0,
-      salaryTo: 0,
+      salaryFrom: 10000,
+salaryTo: 200000,
+
     },
   });
   const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
   async function onSubmit(values: z.infer<typeof jobPostSchema>) {
-    
     try {
       setPending(true);
+      setError(null);
       await createJob(values);
     } catch (error) {
       if (error instanceof Error && error.message !== "NEXT_REDIRECT") {
-        console.log("something went wrong");
+        console.error("Job creation error:", error);
+        setError(error.message || "Failed to create job post. Please try again.");
       }
     } finally {
       setPending(false);
@@ -395,6 +399,12 @@ export function CreateJobForm({
         <Button type="submit" className="w-full" disabled={pending}>
           {pending ? "Submitting" : "Create Job Post"}
         </Button>
+        
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mt-4">
+            <p className="text-red-800 text-sm">{error}</p>
+          </div>
+        )}
       </form>
     </Form>
   );

@@ -1,10 +1,16 @@
 "use client";
-import { XIcon } from "lucide-react";
+
+import { XIcon, Calendar, DollarSign } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+
 import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Label } from "../ui/label";
 import { Checkbox } from "../ui/checkbox";
 import { Separator } from "../ui/separator";
+import { Slider } from "../ui/slider";
+import { Badge } from "../ui/badge";
 import {
   Select,
   SelectContent,
@@ -14,160 +20,227 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
+
 import { countryList } from "@/app/utils/countriesList";
-import { Slider } from "../ui/slider";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback } from "react";
-import { Input } from "../ui/input";
+import { formatCurrency } from "@/app/utils/formatCurrency";
 
 const jobTypes = ["full-time", "part-time", "contract", "internship"];
 
+const datePostedOptions = [
+  { value: "1", label: "Last 24 hours" },
+  { value: "3", label: "Last 3 days" },
+  { value: "7", label: "Last week" },
+  { value: "14", label: "Last 2 weeks" },
+  { value: "30", label: "Last month" },
+];
+
 export function JobFilter() {
   const router = useRouter();
-
   const searchParams = useSearchParams();
 
   const currentJobTypes = searchParams.get("jobTypes")?.split(",") || [];
   const currentLocation = searchParams.get("location") || "";
-  const currentSearch = searchParams.get("search") || "";
-  const currentSalaryRange = searchParams.get("salaryRange")?.split(",").map(Number) || [0, 200000];
+  const currentDatePosted = searchParams.get("datePosted") || "";
+  const currentSalaryMin = Number(searchParams.get("salaryMin")) || 0;
+  const currentSalaryMax = Number(searchParams.get("salaryMax")) || 200000;
+
+  const [salaryRange, setSalaryRange] = useState<[number, number]>([
+    currentSalaryMin,
+    currentSalaryMax,
+  ]);
+
+  useEffect(() => {
+    setSalaryRange([currentSalaryMin, currentSalaryMax]);
+  }, [currentSalaryMin, currentSalaryMax]);
 
   function clearAllFilter() {
-    router.push("/");
+    router.push("/jobs");
   }
 
   const createQueryString = useCallback(
-    (name: string, value: string) => {
+    (updates: Record<string, string>) => {
       const params = new URLSearchParams(searchParams.toString());
 
-      if (value) {
-        params.set(name, value);
-      } else {
-        params.delete(name);
-      }
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value) {
+          params.set(key, value);
+        } else {
+          params.delete(key);
+        }
+      });
 
+      params.set("page", "1");
       return params.toString();
     },
     [searchParams]
   );
 
   function handleJobTypeChange(jobType: string, checked: boolean) {
-    const current = new Set(currentJobTypes);
+    const set = new Set(currentJobTypes);
+    checked ? set.add(jobType) : set.delete(jobType);
 
-    if (checked) {
-      current.add(jobType);
-    } else {
-      current.delete(jobType);
-    }
-
-    const newValue = Array.from(current).join(",");
-    router.push(`?${createQueryString("jobTypes", newValue)}`);
+    router.push(
+      `?${createQueryString({ jobTypes: Array.from(set).join(",") })}`
+    );
   }
 
   function handleLocationChange(location: string) {
-    router.push(`?${createQueryString("location", location)}`);
+    router.push(`?${createQueryString({ location })}`);
   }
 
-  function handleSearchChange(searchTerm: string) {
-    router.push(`?${createQueryString("search", searchTerm)}`);
+  function handleDatePostedChange(value: string) {
+    router.push(
+      `?${createQueryString({
+        datePosted: value === "any" ? "" : value,
+      })}`
+    );
   }
 
-  function handleSalaryRangeChange(values: number[]) {
-    router.push(`?${createQueryString("salaryRange", values.join(","))}`);
+  function applySalaryFilter() {
+    router.push(
+      `?${createQueryString({
+        salaryMin: salaryRange[0].toString(),
+        salaryMax: salaryRange[1].toString(),
+      })}`
+    );
   }
+
+  const hasUnappliedSalaryChanges =
+    salaryRange[0] !== currentSalaryMin ||
+    salaryRange[1] !== currentSalaryMax;
+
+  const activeFiltersCount =
+    currentJobTypes.length +
+    (currentLocation ? 1 : 0) +
+    (currentDatePosted ? 1 : 0) +
+    (currentSalaryMin > 0 || currentSalaryMax < 200000 ? 1 : 0);
 
   return (
-    <Card className="col-span-1 h-fit hover:shadow-lg transition-all duration-300 hover:border-primary">
+    <Card className="h-fit">
       <CardHeader className="flex flex-row justify-between items-center">
-        <CardTitle className="font-semibold text-2xl ">Filters</CardTitle>
+        <div className="flex items-center gap-2">
+          <CardTitle className="text-2xl">Filters</CardTitle>
+          {activeFiltersCount > 0 && (
+            <Badge variant="secondary">{activeFiltersCount}</Badge>
+          )}
+        </div>
+
         <Button
-          onClick={clearAllFilter}
-          className="h-8"
           variant="destructive"
           size="sm"
+          onClick={clearAllFilter}
+          className="gap-1"
         >
-          <span className="">Clear All</span>
-          <XIcon className="size-4" />
+          Clear
+          <XIcon className="h-4 w-4" />
         </Button>
       </CardHeader>
-      <Separator className="mb-4" />
-      <CardContent className="space-y-6">
-        <div className="space-y-3">
-          <Label className="text-lg font-semibold text-primary">Search Jobs</Label>
-          <Input
-            type="text"
-            placeholder="Search by job title..."
-            value={currentSearch}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            className="w-full"
-          />
-        </div>
-        <Separator />
-        <div className="space-y-3">
-          <Label className="text-lg font-semibold text-primary">Job Type</Label>
 
-          <div className="grid grid-cols-2 gap-4">
-            {jobTypes.map((job, index) => (
-              <div key={index} className="flex items-center space-x-2">
-                <Checkbox
-                  onCheckedChange={(checked) => {
-                    handleJobTypeChange(job, checked as boolean);
-                  }}
-                  id={job}
-                  checked={currentJobTypes.includes(job)}
-                />
-                <label htmlFor={job} className="text-sm font-semibold">
-                  {job}
-                </label>
-              </div>
-            ))}
-          </div>
-        </div>
-        <Separator />
+      <Separator />
+
+      <CardContent className="space-y-6">
+        {/* Job Type */}
         <div className="space-y-3">
-          <Label className="text-lg font-semibold text-primary">Location</Label>
-          <Select onValueChange={(location) => {
-            handleLocationChange(location);
-          }} value={currentLocation}>
+          <Label className="text-primary text-lg">Job Type</Label>
+          {jobTypes.map((type) => (
+            <div key={type} className="flex items-center gap-2">
+              <Checkbox
+                checked={currentJobTypes.includes(type)}
+                onCheckedChange={(checked) =>
+                  handleJobTypeChange(type, checked as boolean)
+                }
+              />
+              <span className="capitalize">
+                {type.replace("-", " ")}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        <Separator />
+
+        {/* Location */}
+        <div className="space-y-3">
+          <Label className="text-primary text-lg">Location</Label>
+          <Select value={currentLocation} onValueChange={handleLocationChange}>
             <SelectTrigger>
-              <SelectValue placeholder="Select Location" />
+              <SelectValue placeholder="Select location" />
             </SelectTrigger>
             <SelectContent>
               <SelectGroup>
-                <SelectLabel>World-Wide</SelectLabel>
-                <SelectItem value="worldwide">
-                  <span>🌍</span>{" "}
-                  <span className="pl-2">world-wide / Remote</span>
-                </SelectItem>
+                <SelectLabel>Worldwide</SelectLabel>
+                <SelectItem value="worldwide">🌍 Remote</SelectItem>
               </SelectGroup>
               <SelectGroup>
-                <SelectLabel>Location</SelectLabel>
-                {countryList.map((country) => (
-                  <SelectItem key={country.code} value={country.name}>
-                    <span>{country.flagEmoji}</span>
-                    <span className="pl-2">{country.name}</span>
+                <SelectLabel>Countries</SelectLabel>
+                {countryList.map((c) => (
+                  <SelectItem key={c.code} value={c.name}>
+                    {c.flagEmoji} {c.name}
                   </SelectItem>
                 ))}
               </SelectGroup>
             </SelectContent>
           </Select>
         </div>
+
         <Separator />
-        <div className="space-y-2">
-          <label className="text-lg font-semibold text-primary">
+
+        {/* Date Posted */}
+        <div className="space-y-3">
+          <Label className="flex items-center gap-2 text-primary text-lg">
+            <Calendar className="h-4 w-4" />
+            Date Posted
+          </Label>
+          <Select
+            value={currentDatePosted || "any"}
+            onValueChange={handleDatePostedChange}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Any time" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="any">Any time</SelectItem>
+              {datePostedOptions.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <Separator />
+
+        {/* Salary */}
+        <div className="space-y-4">
+          <Label className="flex items-center gap-2 text-primary text-lg">
+            <DollarSign className="h-4 w-4" />
             Salary Range
-          </label>
-          <Slider 
-            defaultValue={currentSalaryRange} 
-            min={0} 
-            max={200000} 
+          </Label>
+
+          <Slider
+            value={salaryRange}
+            onValueChange={(value) => setSalaryRange(value as [number, number])}
+            min={0}
+            max={200000}
             step={5000}
-            onValueChange={handleSalaryRangeChange}
-            value={currentSalaryRange}
           />
-          <div className="text-sm text-muted-foreground">
-            {currentSalaryRange[0]} - {currentSalaryRange[1]}
+
+          <div className="flex justify-between text-sm text-muted-foreground">
+            <span>{formatCurrency(salaryRange[0])}</span>
+            <span>{formatCurrency(salaryRange[1])}</span>
           </div>
+
+          {hasUnappliedSalaryChanges && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="w-full"
+              onClick={applySalaryFilter}
+            >
+              Apply Salary Filter
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>

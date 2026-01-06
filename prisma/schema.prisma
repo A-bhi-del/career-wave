@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url      =  env("DATABASE_URL")
 }
 
 model User {
@@ -23,9 +23,10 @@ model User {
   Company   Company?
   JobSeeker JobSeeker?
 
-  SavedJobPost SavedJobPost[]
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  SavedJobPost    SavedJobPost[]
+  JobApplication  JobApplication[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 }
 
 enum userType {
@@ -116,13 +117,44 @@ model JobPost {
   Company   Company  @relation(fields: [companyId], references: [id])
   companyId String
 
-  SavedJobPost SavedJobPost[]
+  SavedJobPost    SavedJobPost[]
+  JobApplication  JobApplication[]
 }
 
 enum JobpostStatus {
   DRAFT
   ACTIVE
   EXPIRED
+}
+
+model JobApplication {
+  id        String            @id @default(uuid())
+  JobPost   JobPost           @relation(fields: [jobPostId], references: [id])
+  jobPostId String
+  User      User              @relation(fields: [userId], references: [id])
+  userId    String
+  
+  // Application details
+  coverLetter String?
+  resume      String            // URL to uploaded resume
+  status      ApplicationStatus @default(PENDING)
+  
+  // Company response
+  companyNotes String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, jobPostId])
+}
+
+enum ApplicationStatus {
+  PENDING
+  REVIEWED
+  SHORTLISTED
+  INTERVIEWED
+  REJECTED
+  HIRED
 }
 
 model SavedJobPost {

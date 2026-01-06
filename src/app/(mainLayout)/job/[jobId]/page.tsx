@@ -5,6 +5,7 @@ import { prisma } from "@/app/utils/db";
 import { benefits } from "@/app/utils/listOfBenefits";
 import { JsonToHtml } from "@/components/general/JsonToHtml";
 import { SaveJobButton } from "@/components/general/submitButton";
+import { ApplyJobButton } from "@/components/general/ApplyJobButton";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -46,75 +47,95 @@ function getClient(session: boolean) {
 }
 
 async function getjob(jobId: string, userId?: string) {
-  // const jobData = await prisma.jobPost.findUnique({
-  //   where: {
-  //     status: "ACTIVE",
-  //     id: jobId,
-  //   },
-  //   select: {
-  //     jobTitle: true,
-  //     jobDescription: true,
-  //     location: true,
-  //     employmentType: true,
-  //     benefits: true,
-  //     createdAt: true,
-  //     listingDuration: true,
-  //     Company: {
-  //       select: {
-  //         name: true,
-  //         location: true,
-  //         Logo: true,
-  //         about: true,
-  //       },
-  //     },
-  //   },
-  // });
-
-  const [jobData, savedJob] = await Promise.all([
-    await prisma.jobPost.findUnique({
-      where: {
-        status: "ACTIVE",
-        id: jobId,
-      },
-      select: {
-        jobTitle: true,
-        jobDescription: true,
-        location: true,
-        employmentType: true,
-        benefits: true,
-        createdAt: true,
-        listingDuration: true,
-        Company: {
-          select: {
-            name: true,
-            location: true,
-            Logo: true,
-            about: true,
-          },
+  try {
+    const [jobData, savedJob, existingApplication, jobSeeker] = await Promise.all([
+      await prisma.jobPost.findUnique({
+        where: {
+          status: "ACTIVE",
+          id: jobId,
         },
-      },
-    }),
-    userId
-      ? prisma.savedJobPost.findUnique({
-          where: {
-            userId_jobPostId: {
-              userId: userId,
-              jobPostId: jobId,
+        select: {
+          id: true,
+          jobTitle: true,
+          jobDescription: true,
+          location: true,
+          employmentType: true,
+          benefits: true,
+          createdAt: true,
+          listingDuration: true,
+          Company: {
+            select: {
+              name: true,
+              location: true,
+              Logo: true,
+              about: true,
+              userId: true,
             },
           },
-          select: {
-            id: true,
-          },
-        })
-      : null,
-  ]);
-  if (!jobData) {
+        },
+      }),
+      userId
+        ? prisma.savedJobPost.findUnique({
+            where: {
+              userId_jobPostId: {
+                userId: userId,
+                jobPostId: jobId,
+              },
+            },
+            select: {
+              id: true,
+            },
+          })
+        : null,
+      userId
+        ? (async () => {
+            try {
+              return await (prisma as any).jobApplication.findUnique({
+                where: {
+                  userId_jobPostId: {
+                    userId: userId,
+                    jobPostId: jobId,
+                  },
+                },
+                select: {
+                  id: true,
+                  status: true,
+                  createdAt: true,
+                },
+              });
+            } catch (error) {
+              console.log("JobApplication model not available yet");
+              return null;
+            }
+          })()
+        : null,
+      userId
+        ? prisma.jobSeeker.findUnique({
+            where: {
+              userId: userId,
+            },
+            select: {
+              id: true,
+              resume: true,
+            },
+          })
+        : null,
+    ]);
+
+    if (!jobData) {
+      return notFound();
+    }
+    
+    return {
+      jobData,
+      savedJob,
+      existingApplication,
+      jobSeeker,
+    };
+  } catch (error) {
+    console.error("Error fetching job data:", error);
     return notFound();
   }
-  return {
-    jobData,
-    savedJob,
-  };
 }
 
 type Params = Promise<{ jobId: string }>;
@@ -128,15 +149,19 @@ export default async function JobIdPage({ params }: { params: Params }) {
     throw new Error("forbidden");
   }
 
-  const { jobData: data, savedJob } = await getjob(jobId, session?.user?.id);
+  const { jobData: data, savedJob, existingApplication, jobSeeker } = await getjob(jobId, session?.user?.id);
+  
+  // Check if current user is the company owner
+  const isCompanyOwner = session?.user?.id === data.Company.userId;
+  
   return (
     <div className="grid lg:grid-cols-3 gap-8">
       <div className="space-y-8 col-span-2">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Marketing manager</h1>
+            <h1 className="text-3xl font-bold">{data.jobTitle}</h1>
             <div className="flex items-center gap-2 mt-2">
-              <p className="font-medium ">{data.jobTitle} </p>
+              <p className="font-medium ">{data.Company.name} </p>
               <span className="hidden md:inline text-muted-foreground">*</span>
               <Badge className="rounded-full" variant="secondary">
                 {data.employmentType}
@@ -145,11 +170,7 @@ export default async function JobIdPage({ params }: { params: Params }) {
               <Badge>{data.location}</Badge>
             </div>
           </div>
-          {/* <Button variant="outline">
-            <Heart className="size-4" />
-            Save Job
-          </Button> */}
-          {session?.user ? (
+          {session?.user && !isCompanyOwner ? (
             <form
               action={
                 savedJob
@@ -159,7 +180,7 @@ export default async function JobIdPage({ params }: { params: Params }) {
             >
               <SaveJobButton savedJob={!!savedJob} />
             </form>
-          ) : (
+          ) : !session?.user ? (
             <Link
               href="/login"
               className={buttonVariants({ variant: "outline" })}
@@ -167,7 +188,7 @@ export default async function JobIdPage({ params }: { params: Params }) {
               <Heart className="size-4" />
               Save Job
             </Link>
-          )}
+          ) : null}
         </div>
         <section>
           <JsonToHtml json={JSON.parse(data.jobDescription)} />
@@ -212,7 +233,38 @@ export default async function JobIdPage({ params }: { params: Params }) {
                 CAREER-WAVE. This helps us grow!
               </p>
             </div>
-            <Button className="w-full">Apply Now</Button>
+            
+            {!session?.user ? (
+              <Link href="/login" className={buttonVariants({ className: "w-full" })}>
+                Login to Apply
+              </Link>
+            ) : isCompanyOwner ? (
+              <div className="text-center py-4">
+                <p className="text-sm text-muted-foreground">
+                  You cannot apply to your own job posting
+                </p>
+              </div>
+            ) : existingApplication ? (
+              <div className="space-y-3">
+                <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <p className="text-sm font-medium text-green-800">Application Submitted</p>
+                  <p className="text-xs text-green-600">
+                    Applied on {existingApplication.createdAt.toLocaleDateString()}
+                  </p>
+                  <p className="text-xs text-green-600">
+                    Status: <span className="capitalize">{existingApplication.status.toLowerCase()}</span>
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <ApplyJobButton
+                jobId={data.id}
+                jobTitle={data.jobTitle}
+                companyName={data.Company.name}
+                hasExistingResume={!!jobSeeker?.resume}
+                existingResumeUrl={jobSeeker?.resume}
+              />
+            )}
           </div>
         </Card>
 
@@ -247,7 +299,7 @@ export default async function JobIdPage({ params }: { params: Params }) {
             </div>
             <div className="flex justify-between">
               <span className="text-sm text-muted-foreground">
-                Employement Type
+                Employment Type
               </span>
               <span className="text-sm">{data.employmentType}</span>
             </div>
@@ -264,7 +316,7 @@ export default async function JobIdPage({ params }: { params: Params }) {
             <div className="flex items-center gap-3">
               <Image
                 src={data.Company.Logo}
-                alt="Comapny Logo"
+                alt="Company Logo"
                 height={48}
                 width={48}
                 className="rounded-full size-12"
