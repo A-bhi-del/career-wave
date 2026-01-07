@@ -36,7 +36,7 @@ async function getData({
   const skip = (page - 1) * pageSize;
 
   /* ---------------- Date Filter ---------------- */
-  let dateFilter: any = {};
+  let dateFilter: { createdAt?: { gte: Date } } = {};
   if (datePosted) {
     const daysAgo = parseInt(datePosted);
     const dateThreshold = new Date();
@@ -49,7 +49,11 @@ async function getData({
   }
 
   /* ---------------- Search Filters ---------------- */
-  const searchFilters: any[] = [];
+  const searchFilters: Array<{
+    jobTitle?: { contains: string; mode: "insensitive" };
+    jobDescription?: { contains: string; mode: "insensitive" };
+    benefits?: { hasSome: string[] };
+  }> = [];
   if (search) {
     searchFilters.push(
       {
@@ -78,14 +82,31 @@ async function getData({
         Company: {
           name: {
             contains: company,
-            mode: "insensitive",
+            mode: "insensitive" as const,
           },
         },
       }
     : {};
 
   /* ---------------- WHERE Clause ---------------- */
-  const where: any = {
+  const where: {
+    status: JobpostStatus;
+    employmentType?: { in: string[] };
+    location?: string;
+    AND?: Array<{ salaryFrom?: { gte: number }; salaryTo?: { lte: number } }>;
+    createdAt?: { gte: Date };
+    Company?: {
+      name: {
+        contains: string;
+        mode: "insensitive";
+      };
+    };
+    OR?: Array<{
+      jobTitle?: { contains: string; mode: "insensitive" };
+      jobDescription?: { contains: string; mode: "insensitive" };
+      benefits?: { hasSome: string[] };
+    }>;
+  } = {
     status: JobpostStatus.ACTIVE,
 
     ...(jobTypes.length > 0 && {
@@ -114,14 +135,21 @@ async function getData({
   };
 
   /* ---------------- ORDER BY ---------------- */
-  let orderBy: any = { createdAt: "desc" };
+  let orderBy: 
+    | { createdAt: "desc" | "asc" }
+    | { salaryFrom: "desc" | "asc" }
+    | { salaryTo: "desc" | "asc" }
+    | { jobTitle: "desc" | "asc" }
+    | { Company: { name: "desc" | "asc" } } = { createdAt: "desc" };
 
-  if (sortBy === "salaryFrom" || sortBy === "salaryTo") {
-    orderBy = { [sortBy]: sortOrder };
+  if (sortBy === "salaryFrom") {
+    orderBy = { salaryFrom: sortOrder as "desc" | "asc" };
+  } else if (sortBy === "salaryTo") {
+    orderBy = { salaryTo: sortOrder as "desc" | "asc" };
   } else if (sortBy === "jobTitle") {
-    orderBy = { jobTitle: sortOrder };
+    orderBy = { jobTitle: sortOrder as "desc" | "asc" };
   } else if (sortBy === "Company.name") {
-    orderBy = { Company: { name: sortOrder } };
+    orderBy = { Company: { name: sortOrder as "desc" | "asc" } };
   }
 
   const [jobs, totalCount] = await Promise.all([

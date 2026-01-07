@@ -7,7 +7,7 @@ import { JsonToHtml } from "@/components/general/JsonToHtml";
 import { SaveJobButton } from "@/components/general/submitButton";
 import { ApplyJobButton } from "@/components/general/ApplyJobButton";
 import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
@@ -90,7 +90,7 @@ async function getjob(jobId: string, userId?: string) {
       userId
         ? (async () => {
             try {
-              return await (prisma as any).jobApplication.findUnique({
+              return await prisma.jobApplication.findUnique({
                 where: {
                   userId_jobPostId: {
                     userId: userId,
@@ -103,7 +103,7 @@ async function getjob(jobId: string, userId?: string) {
                   createdAt: true,
                 },
               });
-            } catch (error) {
+            } catch {
               console.log("JobApplication model not available yet");
               return null;
             }

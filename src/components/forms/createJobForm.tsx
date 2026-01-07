@@ -69,8 +69,7 @@ export function CreateJobForm({
       listingDuration: 30,
       location: "",
       salaryFrom: 10000,
-salaryTo: 200000,
-
+      salaryTo: 200000,
     },
   });
   const [pending, setPending] = useState(false);

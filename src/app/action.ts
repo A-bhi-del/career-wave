@@ -271,7 +271,18 @@ export async function applyToJob(jobId: string, coverLetter?: string, resumeUrl?
         // Check if already applied
         let existingApplication = null;
         try {
-            existingApplication = await (prisma as any).jobApplication.findUnique({
+            existingApplication = await (prisma as unknown as {
+                jobApplication: {
+                    findUnique: (args: {
+                        where: {
+                            userId_jobPostId: {
+                                userId: string;
+                                jobPostId: string;
+                            }
+                        }
+                    }) => Promise<unknown>;
+                }
+            }).jobApplication.findUnique({
                 where: {
                     userId_jobPostId: {
                         userId: user.id,
@@ -279,7 +290,7 @@ export async function applyToJob(jobId: string, coverLetter?: string, resumeUrl?
                     }
                 }
             });
-        } catch (error) {
+        } catch {
             console.log("JobApplication model not available yet");
         }
 
@@ -289,7 +300,19 @@ export async function applyToJob(jobId: string, coverLetter?: string, resumeUrl?
 
         // Create application
         try {
-            await (prisma as any).jobApplication.create({
+            await (prisma as unknown as {
+                jobApplication: {
+                    create: (args: {
+                        data: {
+                            jobPostId: string;
+                            userId: string;
+                            coverLetter: string | null;
+                            resume: string;
+                            status: string;
+                        }
+                    }) => Promise<unknown>;
+                }
+            }).jobApplication.create({
                 data: {
                     jobPostId: jobId,
                     userId: user.id,
@@ -298,8 +321,7 @@ export async function applyToJob(jobId: string, coverLetter?: string, resumeUrl?
                     status: "PENDING",
                 }
             });
-        } catch (error) {
-            console.log("JobApplication model not available yet, skipping application creation");
+        } catch {
             throw new Error("Application system is currently being updated. Please try again later.");
         }
 
@@ -338,7 +360,22 @@ export async function updateApplicationStatus(applicationId: string, status: str
         // Verify the application belongs to this company's job
         let application = null;
         try {
-            application = await (prisma as any).jobApplication.findUnique({
+            application = await (prisma as unknown as {
+                jobApplication: {
+                    findUnique: (args: {
+                        where: { id: string };
+                        include: {
+                            JobPost: {
+                                select: {
+                                    companyId: true;
+                                }
+                            }
+                        }
+                    }) => Promise<{
+                        JobPost: { companyId: string };
+                    } | null>;
+                }
+            }).jobApplication.findUnique({
                 where: {
                     id: applicationId,
                 },
@@ -350,8 +387,7 @@ export async function updateApplicationStatus(applicationId: string, status: str
                     }
                 }
             });
-        } catch (error) {
-            console.log("JobApplication model not available yet");
+        } catch {
             throw new Error("Application system is currently being updated. Please try again later.");
         }
 
@@ -359,12 +395,12 @@ export async function updateApplicationStatus(applicationId: string, status: str
             throw new Error("Application not found or access denied");
         }
 
-        await (prisma as any).jobApplication.update({
+        await prisma.jobApplication.update({
             where: {
                 id: applicationId,
             },
             data: {
-                status: status as any,
+                status: status as "PENDING" | "REVIEWED" | "SHORTLISTED" | "INTERVIEWED" | "HIRED" | "REJECTED",
                 companyNotes: companyNotes || null,
             }
         });

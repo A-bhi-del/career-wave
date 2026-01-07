@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
-import { SearchBar } from "@/components/general/SearchBar";
 import Link from "next/link";
 import { Footer } from "@/components/general/Footer";
+import { ClientSearchBar } from "@/components/general/ClientSearchBar";
 
 export default function LandingPage() {
   return (
@@ -26,7 +26,7 @@ export default function LandingPage() {
         </p>
 
         <div className="mt-10 w-full max-w-2xl">
-          <SearchBar />
+          <ClientSearchBar />
         </div>
 
         <div className="mt-8 flex gap-4">

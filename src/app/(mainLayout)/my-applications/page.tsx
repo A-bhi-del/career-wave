@@ -1,4 +1,3 @@
-import { auth } from "@/app/utils/auth";
 import { prisma } from "@/app/utils/db";
 import { requireUser } from "@/app/utils/requireuser";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,7 +32,7 @@ async function getApplicationsForJobSeeker(userId: string) {
 
     try {
       // Try the normal Prisma query first
-      applications = await (prisma as any).jobApplication.findMany({
+      applications = await prisma.jobApplication.findMany({
         where: {
           userId: userId,
         },
@@ -62,7 +61,7 @@ async function getApplicationsForJobSeeker(userId: string) {
         },
       });
 
-      stats = await (prisma as any).jobApplication.groupBy({
+      const groupByResult = await prisma.jobApplication.groupBy({
         by: ["status"],
         where: {
           userId: userId,
@@ -71,7 +70,8 @@ async function getApplicationsForJobSeeker(userId: string) {
           status: true,
         },
       });
-    } catch (error) {
+      stats = groupByResult;
+    } catch  {
       console.log("Prisma model not available yet, using empty data");
       // Return empty data if model is not available
       applications = [];
@@ -116,7 +116,7 @@ export default async function MyApplicationsPage() {
     }
   };
 
-  const totalApplications = stats.reduce((sum: number, stat: any) => sum + stat._count.status, 0);
+  const totalApplications = stats.reduce((sum: number, stat: { status: string; _count: { status: number } }) => sum + stat._count.status, 0);
 
   return (
     <div className="space-y-6">
@@ -140,7 +140,7 @@ export default async function MyApplicationsPage() {
           </CardContent>
         </Card>
 
-        {stats.map((stat: any) => (
+        {stats.map((stat: { status: string; _count: { status: number } }) => (
           <Card key={stat.status}>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -157,7 +157,25 @@ export default async function MyApplicationsPage() {
       {/* Applications List */}
       <div className="space-y-4">
         {applications.length > 0 ? (
-          applications.map((application: any) => (
+          applications.map((application: {
+            id: string;
+            status: string;
+            coverLetter?: string;
+            companyNotes?: string;
+            createdAt: Date;
+            JobPost: {
+              id: string;
+              jobTitle: string;
+              location: string;
+              salaryFrom: number;
+              salaryTo: number;
+              employmentType: string;
+              Company: {
+                name: string;
+                Logo: string;
+              };
+            };
+          }) => (
             <Card key={application.id} className="hover:shadow-md transition-shadow">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
@@ -183,6 +201,7 @@ export default async function MyApplicationsPage() {
                           <h3 className="text-lg font-semibold line-clamp-1">
                             {application.JobPost.jobTitle}
                           </h3>
+                          <p>{jobSeeker.name}&apos;s Application</p>
                         </Link>
                         
                         <div className="flex items-center gap-2 mt-1 mb-3">
@@ -254,7 +273,7 @@ export default async function MyApplicationsPage() {
           <Card>
             <CardContent className="text-center py-12">
               <p className="text-muted-foreground text-lg mb-4">
-                You haven't applied to any jobs yet
+                You haven&apos;t applied to any jobs yet
               </p>
               <p className="text-muted-foreground mb-6">
                 Start browsing jobs and apply to positions that match your skills and interests.

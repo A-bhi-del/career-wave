@@ -152,7 +152,7 @@ export function SearchResultsSummary({
                 {search && (
                   <Badge variant="secondary" className="flex items-center gap-1">
                     <Briefcase className="h-3 w-3" />
-                    Search: "{search}"
+                    Search: &quot;{search}&quot;
                     <Button
                       variant="ghost"
                       size="sm"
@@ -167,7 +167,7 @@ export function SearchResultsSummary({
                 {company && (
                   <Badge variant="secondary" className="flex items-center gap-1">
                     <Building2 className="h-3 w-3" />
-                    Company: "{company}"
+                    Company: &quot;{company}&quot;
                     <Button
                       variant="ghost"
                       size="sm"

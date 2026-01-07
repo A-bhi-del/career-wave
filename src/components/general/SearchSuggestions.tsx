@@ -1,17 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { Card, CardContent } from "../ui/card";
 import { Badge } from "../ui/badge";
 import { TrendingUp, MapPin, Building2 } from "lucide-react";
-import { useRouter } from "next/navigation";
 
 interface SearchSuggestionsProps {
   onSuggestionClick: (suggestion: string, type: 'search' | 'company' | 'location') => void;
 }
 
 export function SearchSuggestions({ onSuggestionClick }: SearchSuggestionsProps) {
-  const router = useRouter();
 
   // Popular search terms (in a real app, these would come from analytics)
   const popularSearches = [

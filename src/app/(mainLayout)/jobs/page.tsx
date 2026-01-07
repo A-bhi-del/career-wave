@@ -1,8 +1,8 @@
-import { JobFilter } from "@/components/general/Jobfilter";
 import { JobListing } from "@/components/general/JobListing";
 import { JobListingLoading } from "@/components/general/JobListingsLoading";
-import { SearchBar } from "@/components/general/SearchBar";
-import { MobileFilterDrawer } from "@/components/general/MobileFilterDrawer";
+import { ClientSearchBar } from "@/components/general/ClientSearchBar";
+import { ClientJobFilter } from "@/components/general/ClientJobFilter";
+import { ClientMobileFilterDrawer } from "@/components/general/ClientMobileFilterDrawer";
 import { Suspense } from "react";
 
 type SearchParams = {
@@ -37,17 +37,17 @@ export default async function Home({ searchParams }: SearchParams) {
   
   return (
     <div className="space-y-6 pt-20">
-      <SearchBar />
+      <ClientSearchBar />
       
       {/* Mobile Filter Button */}
       <div className="flex justify-between items-center md:hidden">
-        <MobileFilterDrawer />
+        <ClientMobileFilterDrawer />
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {/* Desktop Filters */}
         <div className="hidden md:block">
-          <JobFilter />
+          <ClientJobFilter />
         </div>
 
         {/* Job Listings */}

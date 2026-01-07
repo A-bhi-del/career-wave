@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, MapPin, Building2, Filter, SortAsc, SortDesc, X } from "lucide-react";
+import { Search,  Building2, Filter, SortAsc, SortDesc, X } from "lucide-react";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Card, CardContent } from "../ui/card";
@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "../ui/select";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useState, useEffect } from "react";
+import { useCallback, useState} from "react";
 import { Badge } from "../ui/badge";
 import { SearchSuggestions } from "./SearchSuggestions";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../ui/collapsible";
@@ -255,7 +255,12 @@ export function SearchBar() {
 
               {/* Sort Controls */}
               <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">Sort by:</span>
+                <span className="text-sm text-muted-foreground">
+                  Sort by:{" "}
+                  <span className="font-medium text-foreground">
+                    {getSortDisplayName(currentSortBy)}
+                  </span>
+                </span>
                 <Select value={currentSortBy} onValueChange={handleSortChange}>
                   <SelectTrigger className="w-[140px]">
                     <SelectValue />
